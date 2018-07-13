@@ -13,6 +13,8 @@ package org.intermine.api.searchengine.solr;
 import org.apache.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.request.schema.AnalyzerDefinition;
+import org.apache.solr.client.solrj.request.schema.FieldTypeDefinition;
 import org.apache.solr.client.solrj.request.schema.SchemaRequest;
 import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.client.solrj.response.schema.SchemaResponse;
@@ -62,6 +64,36 @@ public final class SolrIndexHandler implements IndexHandler
         }
 
         LOG.debug("Delete previous index ends and it took " + (System.currentTimeMillis() - deleteStartTime) + "ms");
+
+        FieldTypeDefinition fieldTypeDefinition = new FieldTypeDefinition();
+
+        Map<String, Object> fieldTypeAttributes = new HashMap();
+        fieldTypeAttributes.put("name", "stringkeyword");
+        fieldTypeAttributes.put("class", "solr.TextField");
+        fieldTypeAttributes.put("positionIncrementGap", 100);
+        fieldTypeAttributes.put("multiValued", true);
+
+        AnalyzerDefinition indexAnalyzerDefinition = new AnalyzerDefinition();
+        Map<String, Object> indexAnalyzerAttributes = new HashMap<String, Object>();
+        indexAnalyzerAttributes.put("class", "solr.KeywordTokenizerFactory");
+
+        AnalyzerDefinition queryAnalyzerDefinition = new AnalyzerDefinition();
+        Map<String, Object> queryAnalzerAttributes = new HashMap<String, Object>();
+        queryAnalzerAttributes.put("class", "olr.KeywordTokenizerFactory");
+
+        fieldTypeDefinition.setAttributes(fieldTypeAttributes);
+        fieldTypeDefinition.setIndexAnalyzer(indexAnalyzerDefinition);
+        fieldTypeDefinition.setQueryAnalyzer(queryAnalyzerDefinition);
+
+        try{
+            SchemaRequest.AddFieldType schemaRequest = new SchemaRequest.AddFieldType(fieldTypeDefinition);
+            SchemaResponse.UpdateResponse response =  schemaRequest.process(solrClient);
+
+        } catch (SolrServerException e){
+            LOG.error("Error while adding fields to the solrclient.", e);
+
+            e.printStackTrace();
+        }
 
         KeywordSearchPropertiesManager keywordSearchPropertiesManager
                 = KeywordSearchPropertiesManager.getInstance(os);
@@ -163,11 +195,12 @@ public final class SolrIndexHandler implements IndexHandler
 
         fieldNames.add("Category");
         fieldNames.add("classname");
+        fieldNames.add("_text_");
 
         for(String fieldName: fieldNames){
             Map<String, Object> fieldAttributes = new HashMap();
             fieldAttributes.put("name", fieldName);
-            fieldAttributes.put("type", "string");
+            fieldAttributes.put("type", "stringkeyword");
             fieldAttributes.put("stored", false);
             fieldAttributes.put("indexed", true);
             fieldAttributes.put("multiValued", true);
