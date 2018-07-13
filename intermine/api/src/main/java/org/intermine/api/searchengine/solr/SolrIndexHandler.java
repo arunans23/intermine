@@ -82,23 +82,6 @@ public final class SolrIndexHandler implements IndexHandler
 
         List<SolrInputDocument> solrInputDocuments = new ArrayList<SolrInputDocument>();
 
-        //adding copy field to solr so that all the fields can be searchable
-        //No need to search for Category : gene. Searching for gene is enough
-
-        try{
-
-            List<String> copyFieldAttributes = new ArrayList<String>();
-            copyFieldAttributes.add("_text_");
-
-            SchemaRequest.AddCopyField schemaCopyRequest = new SchemaRequest.AddCopyField("*", copyFieldAttributes);
-            SchemaResponse.UpdateResponse copyFieldResponse =  schemaCopyRequest.process(solrClient);
-
-        } catch (SolrServerException e){
-            LOG.error("Error while adding copy field to the solrclient.", e);
-
-            e.printStackTrace();
-        }
-
         // loop and index while we still have fetchers running
         LOG.debug("Starting to index...");
 
@@ -159,34 +142,6 @@ public final class SolrIndexHandler implements IndexHandler
 
     private void commitBatchData(SolrClient solrClient, List<SolrInputDocument> solrDocumentList,
                                  ArrayList<String> fieldNames) throws IOException {
-        //Accessing SchemaAPI from solr and create the schema dynamically
-
-        fieldNames.add("Category");
-        fieldNames.add("classname");
-
-        for(String fieldName: fieldNames){
-            Map<String, Object> fieldAttributes = new HashMap();
-            fieldAttributes.put("name", fieldName);
-            fieldAttributes.put("type", "string");
-            fieldAttributes.put("stored", false);
-            fieldAttributes.put("indexed", true);
-            fieldAttributes.put("multiValued", true);
-            fieldAttributes.put("required", false);
-
-            try{
-                SchemaRequest.AddField schemaRequest = new SchemaRequest.AddField(fieldAttributes);
-                SchemaResponse.UpdateResponse response =  schemaRequest.process(solrClient);
-
-            } catch (SolrServerException e){
-                LOG.error("Error while adding fields to the solrclient.", e);
-
-                e.printStackTrace();
-            }
-        }
-
-
-
-
 
         LOG.debug("Beginning to commit Solr Documents into Solr");
 
