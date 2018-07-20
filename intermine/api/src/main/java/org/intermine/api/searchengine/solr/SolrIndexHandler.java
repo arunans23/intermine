@@ -48,13 +48,13 @@ public final class SolrIndexHandler implements IndexHandler
     public void createIndex(ObjectStore os, Map<String, List<FieldDescriptor>> classKeys)
             throws IOException {
         long time = System.currentTimeMillis();
-        LOG.debug("Creating keyword search index...");
+        LOG.info("Creating keyword search index...");
 
         SolrClient solrClient = SolrClientManager.getClientInstance(os);
 
         //delete previous documents in solr
 
-        LOG.debug("Delete previous index begins");
+        LOG.info("Delete previous index begins");
         long deleteStartTime = System.currentTimeMillis();
 
         FieldTypeDefinition fieldTypeDefinition = new FieldTypeDefinition();
@@ -124,7 +124,7 @@ public final class SolrIndexHandler implements IndexHandler
             LOG.error("Deleting old index failed", e);
         }
 
-        LOG.debug("Delete previous index ends and it took " + (System.currentTimeMillis() - deleteStartTime) + "ms");
+        LOG.info("Delete previous index ends and it took " + (System.currentTimeMillis() - deleteStartTime) + "ms");
 
         KeywordSearchPropertiesManager keywordSearchPropertiesManager
                 = KeywordSearchPropertiesManager.getInstance(os);
@@ -177,9 +177,9 @@ public final class SolrIndexHandler implements IndexHandler
         List<SolrInputDocument> solrInputDocuments = new ArrayList<SolrInputDocument>();
 
         // loop and index while we still have fetchers running
-        LOG.debug("Starting to index...");
+        LOG.info("Starting to fetch documents...");
 
-        long indexStartTime = System.currentTimeMillis();
+        long fetchStartTime = System.currentTimeMillis();
 
         while (indexingQueue.hasNext()) {
             SolrInputDocument doc = indexingQueue.next();
@@ -188,25 +188,41 @@ public final class SolrIndexHandler implements IndexHandler
 
             indexed++;
 
-            if (solrInputDocuments.size() == keywordSearchPropertiesManager.getIndexBatchSize()){
-
-                commitBatchData(solrClient, solrInputDocuments);
-
-                LOG.info("docs indexed=" + indexed + "; thread state="
-                        + fetchThread.getState() + "; docs/ms=" + indexed * 1.0F
-                        / (System.currentTimeMillis() - time) + "; memory="
-                        + Runtime.getRuntime().freeMemory() / 1024 + "k/"
-                        + Runtime.getRuntime().maxMemory() / 1024 + "k" + "; time="
-                        + (System.currentTimeMillis() - time) + "ms");
-
-                solrInputDocuments = new ArrayList<SolrInputDocument>();
-            }
+//            if (solrInputDocuments.size() == keywordSearchPropertiesManager.getIndexBatchSize()){
+//
+//                commitBatchData(solrClient, solrInputDocuments);
+//
+//                LOG.info("docs indexed=" + indexed + "; thread state="
+//                        + fetchThread.getState() + "; docs/ms=" + indexed * 1.0F
+//                        / (System.currentTimeMillis() - time) + "; memory="
+//                        + Runtime.getRuntime().freeMemory() / 1024 + "k/"
+//                        + Runtime.getRuntime().maxMemory() / 1024 + "k" + "; time="
+//                        + (System.currentTimeMillis() - time) + "ms");
+//
+//                solrInputDocuments = new ArrayList<SolrInputDocument>();
+//            }
 
         }
 
+        LOG.info("Fetching ended and it took " + (System.currentTimeMillis() - fetchStartTime) + "ms");
+
+        LOG.info("Starting to commit fieldNames");
+
+        long fieldNamesCommitStartTime = System.currentTimeMillis();
+
+        Set<String> fieldNames = fetchThread.getFieldNames();
+
+        for (String fieldName : fieldNames) {
+            addFieldNameToSchema(fieldName, FIELD_TYPE_NAME, solrClient);
+        }
+
+        LOG.info("Adding field names ends and it took " + (System.currentTimeMillis() - fieldNamesCommitStartTime) + "ms");
+
+        long indexStartTime = System.currentTimeMillis();
+
         commitBatchData(solrClient, solrInputDocuments);
 
-        LOG.debug("Solr indexing ends and it took " + (System.currentTimeMillis() - indexStartTime) + "ms");
+        LOG.info("Solr indexing ends and it took " + (System.currentTimeMillis() - indexStartTime) + "ms");
 
         if (fetchThread.getException() != null) {
             try {
@@ -230,7 +246,7 @@ public final class SolrIndexHandler implements IndexHandler
 
         if (solrDocumentList.size() != 0) {
 
-            LOG.debug("Beginning to commit Solr Documents into Solr");
+            LOG.info("Beginning to commit Solr Documents into Solr");
 
             try {
                 UpdateResponse response = solrClient.add(solrDocumentList);

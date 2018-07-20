@@ -369,7 +369,8 @@ public class SolrObjectHandler extends Thread {
                                     } else {
                                         doc.addField(virtualPathField,
                                                 (String) facetValue);
-                                        addFieldNameToSchema(virtualPathField);
+//                                        addFieldNameToSchema(virtualPathField);
+                                        this.fieldNames.add(virtualPathField);
                                     }
                                 }
                             }
@@ -390,7 +391,8 @@ public class SolrObjectHandler extends Thread {
                                 && !StringUtils.isBlank((String) facetValue)) {
                             doc.addField(referenceFacet.getField(),
                                     (String) facetValue);
-                            addFieldNameToSchema(referenceFacet.getField());
+//                            addFieldNameToSchema(referenceFacet.getField());
+                            fieldNames.add(referenceFacet.getField());
                         }
                     }
                 }
@@ -561,7 +563,8 @@ public class SolrObjectHandler extends Thread {
             }
 
             doc.addField(f.getName(), f.getValue());
-            addFieldNameToSchema(f.getName());
+//            addFieldNameToSchema(f.getName());
+            fieldNames.add(f.getName());
 
             return f;
         }
@@ -654,30 +657,30 @@ public class SolrObjectHandler extends Thread {
         return q;
     }
 
-    public void addFieldNameToSchema( String fieldName) {
-
-        if (!fieldNames.contains(fieldName)){
-            fieldNames.add(fieldName);
-
-            Map<String, Object> fieldAttributes = new HashMap();
-            fieldAttributes.put("name", fieldName);
-            fieldAttributes.put("type", FIELD_TYPE_NAME);
-            fieldAttributes.put("stored", false);
-            fieldAttributes.put("indexed", true);
-            fieldAttributes.put("multiValued", true);
-            fieldAttributes.put("required", false);
-
-            try{
-                SchemaRequest.AddField schemaRequest = new SchemaRequest.AddField(fieldAttributes);
-                SchemaResponse.UpdateResponse response =  schemaRequest.process(solrClient);
-
-            } catch (Exception e){
-                LOG.error("Error while adding fields to the solrclient.", e);
-
-                e.printStackTrace();
-            }
-        }
-
-    }
+//    public void addFieldNameToSchema( String fieldName) {
+//
+//        if (!fieldNames.contains(fieldName)){
+//            fieldNames.add(fieldName);
+//
+//            Map<String, Object> fieldAttributes = new HashMap();
+//            fieldAttributes.put("name", fieldName);
+//            fieldAttributes.put("type", FIELD_TYPE_NAME);
+//            fieldAttributes.put("stored", false);
+//            fieldAttributes.put("indexed", true);
+//            fieldAttributes.put("multiValued", true);
+//            fieldAttributes.put("required", false);
+//
+//            try{
+//                SchemaRequest.AddField schemaRequest = new SchemaRequest.AddField(fieldAttributes);
+//                SchemaResponse.UpdateResponse response =  schemaRequest.process(solrClient);
+//
+//            } catch (Exception e){
+//                LOG.error("Error while adding fields to the solrclient.", e);
+//
+//                e.printStackTrace();
+//            }
+//        }
+//
+//    }
 
 }
