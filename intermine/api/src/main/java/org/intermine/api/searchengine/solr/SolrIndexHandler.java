@@ -275,7 +275,8 @@ public final class SolrIndexHandler implements IndexHandler
 
         AnalyzerDefinition indexAnalyzerDefinition1 = new AnalyzerDefinition();
         Map<String, Object> indexTokenizerAttributes1 = new HashMap<String, Object>();
-        indexTokenizerAttributes1.put("class", "solr.WhitespaceTokenizerFactory");
+        indexTokenizerAttributes1.put("class", "solr.PatternTokenizerFactory");
+        indexTokenizerAttributes1.put("pattern", "[\\s,]");
         indexAnalyzerDefinition1.setTokenizer(indexTokenizerAttributes1);
         Map<String, Object> indexLowerCaseFilterAttributes1 = new HashMap<String, Object>();
         indexLowerCaseFilterAttributes1.put("class", "solr.LowerCaseFilterFactory");
